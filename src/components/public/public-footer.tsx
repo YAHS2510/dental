@@ -1,0 +1,83 @@
+import Link from "next/link";
+import { Stethoscope, Heart, Clock, MapPin, Mail, Phone } from "lucide-react";
+
+export function PublicFooter() {
+  return (
+    <footer className="border-t border-brand-border bg-brand-surface text-brand-text">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-clinic bg-brand-primary text-brand-primary-foreground">
+                <Stethoscope className="h-4 w-4" />
+              </div>
+              <span className="font-bold font-heading text-base">HealthSphere Clinic</span>
+            </div>
+            <p className="text-sm text-brand-muted">
+              Compassionate, state-of-the-art healthcare tailored to your family&apos;s needs. Providing preventive, diagnostic, and specialty medical care.
+            </p>
+            <div className="flex items-center gap-1.5 text-xs text-brand-muted pt-2">
+              <Heart className="h-3.5 w-3.5 text-brand-primary" />
+              <span>Certified Healthcare Quality Provider</span>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-heading text-sm font-semibold mb-3">Quick Navigation</h4>
+            <ul className="space-y-2 text-sm text-brand-muted">
+              <li><Link href="/" className="hover:text-brand-primary transition-colors">Home</Link></li>
+              <li><Link href="/services" className="hover:text-brand-primary transition-colors">Services & Pricing</Link></li>
+              <li><Link href="/doctors" className="hover:text-brand-primary transition-colors">Doctors & Staff</Link></li>
+              <li><Link href="/book" className="hover:text-brand-primary transition-colors">Book Appointment</Link></li>
+              <li><Link href="/admin" className="hover:text-brand-primary transition-colors">Staff & Admin Login</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-heading text-sm font-semibold mb-3">Clinic Hours</h4>
+            <ul className="space-y-2 text-sm text-brand-muted">
+              <li className="flex items-center gap-2">
+                <Clock className="h-3.5 w-3.5 text-brand-primary shrink-0" />
+                <span>Mon - Fri: 8:00 AM - 7:00 PM</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Clock className="h-3.5 w-3.5 text-brand-primary shrink-0" />
+                <span>Saturday: 9:00 AM - 4:00 PM</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Clock className="h-3.5 w-3.5 text-brand-primary shrink-0" />
+                <span>Sunday: Urgent Care Only (10 AM - 2 PM)</span>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-heading text-sm font-semibold mb-3">Contact & Location</h4>
+            <ul className="space-y-2 text-sm text-brand-muted">
+              <li className="flex items-start gap-2">
+                <MapPin className="h-4 w-4 text-brand-primary shrink-0 mt-0.5" />
+                <span>742 Evergreen Medical Way, Suite 400, Metro City</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Phone className="h-3.5 w-3.5 text-brand-primary shrink-0" />
+                <span>(800) 555-2546</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5 text-brand-primary shrink-0" />
+                <span>contact@healthsphere.example.com</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-8 border-t border-brand-border pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-brand-muted">
+          <p>© {new Date().getFullYear()} HealthSphere Platform. Multi-tenant Clinic Software.</p>
+          <div className="flex gap-4 mt-2 sm:mt-0">
+            <Link href="/api/health" className="hover:underline">System API Health</Link>
+            <Link href="/admin/settings" className="hover:underline">Clinic Theme Settings</Link>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}

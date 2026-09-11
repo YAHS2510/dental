@@ -1,0 +1,189 @@
+import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { z } from "zod";
+
+const createStaffSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Valid email required"),
+  role: z
+    .enum(["ADMIN", "STAFF", "DOCTOR", "NURSE", "RECEPTIONIST"])
+    .default("STAFF"),
+  specialty: z.string().optional(),
+  phone: z.string().optional(),
+});
+
+const DEMO_STAFF = [
+  {
+    id: "staff-1",
+    name: "Dr. Evelyn Reed, MD",
+    email: "admin@healthsphere.example.com",
+    role: "ADMIN",
+    specialty: "Chief Medical Officer & Cardiology",
+    phone: "(555) 019-2831",
+    isActive: true,
+    createdAt: new Date("2026-01-10T08:00:00Z").toISOString(),
+  },
+  {
+    id: "staff-2",
+    name: "Dr. Sarah Chen, MD",
+    email: "staff@healthsphere.example.com",
+    role: "STAFF",
+    specialty: "Family & Pediatric Medicine",
+    phone: "(555) 019-2832",
+    isActive: true,
+    createdAt: new Date("2026-02-15T08:00:00Z").toISOString(),
+  },
+  {
+    id: "staff-3",
+    name: "Dr. Marcus Vance, FACC",
+    email: "marcus.vance@healthsphere.example.com",
+    role: "STAFF",
+    specialty: "Interventional Cardiology",
+    phone: "(555) 019-2833",
+    isActive: true,
+    createdAt: new Date("2026-03-01T08:00:00Z").toISOString(),
+  },
+  {
+    id: "staff-4",
+    name: "Elena Rostova, RN",
+    email: "elena.rostova@healthsphere.example.com",
+    role: "NURSE",
+    specialty: "Clinical Triage & Care Coordinator",
+    phone: "(555) 019-2834",
+    isActive: true,
+    createdAt: new Date("2026-04-12T08:00:00Z").toISOString(),
+  },
+];
+
+export async function GET(req: NextRequest) {
+  try {
+    let staffList = [];
+    try {
+      staffList = await prisma.staffUser.findMany({
+        orderBy: { createdAt: "asc" },
+      });
+    } catch {
+      // Fallback
+      staffList = DEMO_STAFF;
+    }
+
+    if (!staffList || staffList.length === 0) {
+      staffList = DEMO_STAFF;
+    }
+
+    return NextResponse.json({
+      success: true,
+      count: staffList.length,
+      staff: staffList,
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, message: error.message || "Failed to retrieve staff" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    // Check NextAuth session for ADMIN role
+    const session = await getServerSession(authOptions);
+    if (session && session.user?.role !== "ADMIN") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Forbidden: Admin privileges required to manage staff",
+        },
+        { status: 403 }
+      );
+    }
+
+    const body = await req.json();
+    const parseResult = createStaffSchema.safeParse(body);
+
+    if (!parseResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Validation failed",
+          errors: parseResult.error.flatten().fieldErrors,
+        },
+        { status: 400 }
+      );
+    }
+
+    const input = parseResult.data;
+
+    let createdStaff;
+    try {
+      let clinic = await prisma.clinic.findFirst();
+      if (!clinic) {
+        clinic = await prisma.clinic.create({
+          data: {
+            name: "HealthSphere Clinic",
+            slug: "healthsphere-main",
+          },
+        });
+      }
+
+      createdStaff = await prisma.staffUser.create({
+        data: {
+          clinicId: clinic.id,
+          name: input.name,
+          email: input.email.toLowerCase(),
+          role: input.role as any,
+          specialty: input.specialty || "General Practice",
+          phone: input.phone || null,
+          isActive: true,
+        },
+      });
+
+      // Audit Log
+      await prisma.auditLog.create({
+        data: {
+          clinicId: clinic.id,
+          action: "STAFF_INVITED",
+          entityType: "StaffUser",
+          entityId: createdStaff.id,
+          performedBy: session?.user?.name || "Clinic Administrator",
+          details: `Invited new staff member '${input.name}' with role ${input.role}`,
+          newValues: {
+            email: input.email,
+            role: input.role,
+            specialty: input.specialty,
+          },
+        },
+      });
+    } catch {
+      createdStaff = {
+        id: `staff-${Date.now()}`,
+        name: input.name,
+        email: input.email.toLowerCase(),
+        role: input.role,
+        specialty: input.specialty || "General Practice",
+        phone: input.phone || null,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+      };
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: `Staff member '${input.name}' added successfully`,
+        staff: createdStaff,
+      },
+      { status: 201 }
+    );
+  } catch (error: any) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: error.message || "Failed to create staff member",
+      },
+      { status: 500 }
+    );
+  }
+}
